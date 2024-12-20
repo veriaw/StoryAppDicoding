@@ -17,6 +17,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
     @POST("login")
@@ -30,9 +31,12 @@ interface ApiService {
     ): Call<RegisterResponse>
 
     @GET("stories")
-    fun getAllStories(
-        @Header("Authorization") authToken: String
-    ): Call<GetStoryResponse>
+    suspend fun getAllStories(
+        @Header("Authorization") authToken: String,
+        @Query("page") page: Int,
+        @Query("size") size: Int,
+        @Query("location") location: Int = 1,
+    ): GetStoryResponse
 
     @GET("stories/{id}")
     fun getDetailStories(

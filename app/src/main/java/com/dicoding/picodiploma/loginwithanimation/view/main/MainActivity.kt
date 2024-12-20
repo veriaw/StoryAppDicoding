@@ -3,17 +3,21 @@ package com.dicoding.picodiploma.loginwithanimation.view.main
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowInsets
 import android.view.WindowManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dicoding.picodiploma.loginwithanimation.databinding.ActivityMainBinding
 import com.dicoding.picodiploma.loginwithanimation.view.ViewModelFactory
 import com.dicoding.picodiploma.loginwithanimation.view.adapter.StoriesAdapter
 import com.dicoding.picodiploma.loginwithanimation.view.addstory.AddStoryActivity
 import com.dicoding.picodiploma.loginwithanimation.view.welcome.WelcomeActivity
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private val viewModel by viewModels<MainViewModel> {
@@ -66,10 +70,12 @@ class MainActivity : AppCompatActivity() {
     private fun loadData() {
         viewModel.getSession().observe(this, Observer {user->
             val token = "Bearer "+user.token
-            viewModel.getAllStories(token)
-            viewModel.allStories.observe(this, Observer { response->
-                storyAdapter.submitList(response)
-            })
+            lifecycleScope.launch {
+                viewModel.getAllStories(token).collectLatest {response->
+                    Log.d("Search Places","$response")
+                    storyAdapter.submitData(response)
+                }
+            }
         })
     }
 

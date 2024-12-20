@@ -4,6 +4,7 @@ import android.content.Context
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.AttributeSet
+import android.util.Log
 import androidx.appcompat.widget.AppCompatEditText
 import com.google.android.material.textfield.TextInputLayout
 
@@ -17,6 +18,7 @@ class CustomEditText @JvmOverloads constructor(
         addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
             }
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (s != null && s.length < 8) {
                     showError("Password harus memiliki minimal 8 karakter")
@@ -30,16 +32,10 @@ class CustomEditText @JvmOverloads constructor(
     }
 
     private fun showError(message: String) {
-        val parent = parent
-        if (parent is TextInputLayout) {
-            parent.error = message
-        }
+        error = message
     }
 
     private fun hideError() {
-        val parent = parent
-        if (parent is TextInputLayout) {
-            parent.error = null
-        }
+        error = null
     }
 }

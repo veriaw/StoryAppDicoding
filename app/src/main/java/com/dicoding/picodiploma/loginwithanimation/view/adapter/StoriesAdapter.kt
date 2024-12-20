@@ -3,6 +3,7 @@ package com.dicoding.picodiploma.loginwithanimation.view.adapter
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -11,7 +12,7 @@ import com.dicoding.picodiploma.loginwithanimation.data.remote.response.ListStor
 import com.dicoding.picodiploma.loginwithanimation.databinding.ListStoryBinding
 import com.dicoding.picodiploma.loginwithanimation.view.detail.DetailActivity
 
-class StoriesAdapter(): ListAdapter<ListStoryItem, StoriesAdapter.MyViewHolder>(DIFF_CALLBACK) {
+class StoriesAdapter(): PagingDataAdapter<ListStoryItem, StoriesAdapter.MyViewHolder>(DIFF_CALLBACK) {
     class MyViewHolder(val binding: ListStoryBinding): RecyclerView.ViewHolder(binding.root) {
         fun bind(story: ListStoryItem?) {
             Glide.with(binding.storyImage.context)
@@ -32,7 +33,7 @@ class StoriesAdapter(): ListAdapter<ListStoryItem, StoriesAdapter.MyViewHolder>(
         holder.bind(story)
         holder.itemView.setOnClickListener{
             val moveWithObjectIntent = Intent(holder.itemView.context, DetailActivity::class.java)
-            moveWithObjectIntent.putExtra("ID_STORY", story.id)
+            moveWithObjectIntent.putExtra("ID_STORY", story?.id)
             holder.itemView.context.startActivity(moveWithObjectIntent)
         }
     }

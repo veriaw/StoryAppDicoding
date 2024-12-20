@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -55,8 +56,16 @@ class AddStoryActivity : AppCompatActivity() {
                 val token = "Bearer "+user.token
                 multipartBody?.let { it1 -> viewModel.addNewStory(requestBody, it1,token) }
             })
-            startActivity(Intent(this, MainActivity::class.java))
         }
+        viewModel.addStoryResponse.observe(this, Observer { response->
+            Log.d("AddStoryResponse", "Response received: $response")
+            if(response.error==false){
+                startActivity(Intent(this, MainActivity::class.java))
+                Log.d("CHECK MESSAGE","${response.message}")
+            }else{
+                Toast.makeText(this, "Failed to Add Story Because ${response.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     private fun startGallery() {
