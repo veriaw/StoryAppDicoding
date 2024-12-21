@@ -21,6 +21,7 @@ class SignupActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySignupBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        supportActionBar?.hide()
         viewModel = ViewModelProvider(this).get(SignUpViewModel::class.java)
         setupView()
         setupAction()

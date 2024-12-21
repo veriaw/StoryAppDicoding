@@ -9,15 +9,13 @@ import android.view.WindowManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dicoding.picodiploma.loginwithanimation.databinding.ActivityMainBinding
 import com.dicoding.picodiploma.loginwithanimation.view.ViewModelFactory
 import com.dicoding.picodiploma.loginwithanimation.view.adapter.StoriesAdapter
 import com.dicoding.picodiploma.loginwithanimation.view.addstory.AddStoryActivity
+import com.dicoding.picodiploma.loginwithanimation.view.map.MapsActivity
 import com.dicoding.picodiploma.loginwithanimation.view.welcome.WelcomeActivity
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private val viewModel by viewModels<MainViewModel> {
@@ -30,7 +28,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        supportActionBar?.hide()
         viewModel.getSession().observe(this) { user ->
             if (!user.isLogin) {
                 startActivity(Intent(this, WelcomeActivity::class.java))
@@ -70,12 +68,10 @@ class MainActivity : AppCompatActivity() {
     private fun loadData() {
         viewModel.getSession().observe(this, Observer {user->
             val token = "Bearer "+user.token
-            lifecycleScope.launch {
-                viewModel.getAllStories(token).collectLatest {response->
-                    Log.d("Search Places","$response")
-                    storyAdapter.submitData(response)
-                }
-            }
+            viewModel.getAllStories(token).observe(this, Observer { response->
+                Log.d("Search Places","$response")
+                storyAdapter.submitData(lifecycle, response)
+            })
         })
     }
 
@@ -87,6 +83,9 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnAddStory.setOnClickListener {
             startActivity(Intent(this, AddStoryActivity::class.java))
+        }
+        binding.btnMap.setOnClickListener {
+            startActivity(Intent(this, MapsActivity::class.java))
         }
     }
 

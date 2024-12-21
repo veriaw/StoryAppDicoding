@@ -1,17 +1,14 @@
 package com.dicoding.picodiploma.loginwithanimation.view.main
 
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.dicoding.picodiploma.loginwithanimation.data.StoryPagingSource
+import com.dicoding.picodiploma.loginwithanimation.data.StoryRepository
 import com.dicoding.picodiploma.loginwithanimation.data.UserRepository
 import com.dicoding.picodiploma.loginwithanimation.data.pref.UserModel
 import com.dicoding.picodiploma.loginwithanimation.data.remote.ApiConfig
@@ -19,7 +16,6 @@ import com.dicoding.picodiploma.loginwithanimation.data.remote.response.AddStory
 import com.dicoding.picodiploma.loginwithanimation.data.remote.response.DetailStoryResponse
 import com.dicoding.picodiploma.loginwithanimation.data.remote.response.GetStoryResponse
 import com.dicoding.picodiploma.loginwithanimation.data.remote.response.ListStoryItem
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -27,7 +23,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class MainViewModel(private val repository: UserRepository) : ViewModel() {
+class MainViewModel(private val repositoryUser: UserRepository, private val repositoryStory: StoryRepository ) : ViewModel() {
     private val _allStories = MutableLiveData<List<ListStoryItem>?>()
     val allStories: LiveData<List<ListStoryItem>?> = _allStories
     private val _detailStories = MutableLiveData<DetailStoryResponse>()
@@ -36,23 +32,34 @@ class MainViewModel(private val repository: UserRepository) : ViewModel() {
     val addStoryResponse: LiveData<AddStoryResponse> = _addStoryResponse
 
     fun getSession(): LiveData<UserModel> {
-        return repository.getSession().asLiveData()
+        return repositoryUser.getSession().asLiveData()
     }
 
     fun logout() {
         viewModelScope.launch {
-            repository.logout()
+            repositoryUser.logout()
         }
     }
 
-    fun getAllStories(authToken: String): Flow<PagingData<ListStoryItem>> {
-        return Pager(
-            config = PagingConfig(
-                pageSize = 20, // Ukuran halaman
-                enablePlaceholders = false // Jangan gunakan placeholder
-            ),
-            pagingSourceFactory = { StoryPagingSource(authToken) }
-        ).flow.cachedIn(viewModelScope)
+    fun getAllStories(authToken: String): LiveData<PagingData<ListStoryItem>> = repositoryStory.getAllStories(authToken).cachedIn(viewModelScope)
+
+    fun getAllStoriesWithMarker(authToken: String){
+        val client = ApiConfig.getApiService().getAllStoriesWithMarker(authToken)
+        client.enqueue(object : retrofit2.Callback<GetStoryResponse>{
+            override fun onResponse(call: Call<GetStoryResponse>, response: Response<GetStoryResponse>) {
+                if (response.isSuccessful) {
+                    _allStories.value = response.body()?.listStory
+                    Log.e("Get Stories", "Succesfully Fetch All Stories")
+                }else{
+                    Log.e("Get Stories", "onFailure: ${response.message()}")
+                }
+            }
+
+            override fun onFailure(call: Call<GetStoryResponse>, t: Throwable) {
+                Log.e("Get Stories", "onFailure: ${t.message.toString()}")
+            }
+
+        })
     }
 
     fun getDetailStories(authToken: String, id: String){
@@ -74,8 +81,36 @@ class MainViewModel(private val repository: UserRepository) : ViewModel() {
         })
     }
 
-    fun addNewStory(description: RequestBody, photo: MultipartBody.Part,authToken: String){
-        val client = ApiConfig.getApiService().addNewStory(description,photo,authToken)
+    fun addNewStory(
+        description: RequestBody, photo: MultipartBody.Part,
+        authToken: String){
+        val client = ApiConfig.getApiService().addNewStory(description, photo, authToken)
+        client.enqueue(object : Callback<AddStoryResponse>{
+            override fun onResponse(
+                call: Call<AddStoryResponse>,
+                response: Response<AddStoryResponse>
+            ) {
+                if (response.isSuccessful) {
+                    Log.e("Add Stories", "Succesfully Add Stories")
+                    _addStoryResponse.value=response.body()
+                }else{
+                    Log.e("Add Stories", "Test: ${response.message()}")
+                    _addStoryResponse.value = AddStoryResponse(error = true, message = response.message())
+                }
+                Log.d("MAIN VIEW ADD STORY","${response.body()}")
+            }
+
+            override fun onFailure(call: Call<AddStoryResponse>, t: Throwable) {
+                Log.e("Add Stories", "onFailure: ${t.message.toString()}")
+            }
+
+        })
+    }
+
+    fun addNewStoryWithLoc(
+        description: RequestBody, lat: Float, lon: Float, photo: MultipartBody.Part,
+        authToken: String){
+        val client = ApiConfig.getApiService().addNewStoryWithLoc(description, lat, lon, photo, authToken)
         client.enqueue(object : Callback<AddStoryResponse>{
             override fun onResponse(
                 call: Call<AddStoryResponse>,

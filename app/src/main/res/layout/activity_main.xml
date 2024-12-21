@@ -24,12 +24,22 @@
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
+            android:layout_gravity="center"
             android:text="Selamat Datang, \nUsername"
-            android:textSize="18sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnMap"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            app:fabCustomSize="50dp"
+            android:layout_marginHorizontal="16dp"
+            app:srcCompat="@drawable/ic_map" />
 
         <Button
             android:id="@+id/btnLogout"
@@ -38,6 +48,7 @@
             android:layout_gravity="center"
             android:backgroundTint="@color/red"
             android:text="Logout" />
+
     </LinearLayout>
 
     <TextView

@@ -2,11 +2,11 @@ package com.dicoding.picodiploma.loginwithanimation.data
 
 import com.dicoding.picodiploma.loginwithanimation.data.pref.UserModel
 import com.dicoding.picodiploma.loginwithanimation.data.pref.UserPreference
-import com.dicoding.picodiploma.loginwithanimation.data.remote.ApiService
 import kotlinx.coroutines.flow.Flow
 
-class UserRepository private constructor(
-    private val userPreference: UserPreference
+
+open class UserRepository(
+    val userPreference: UserPreference
 ) {
 
     suspend fun saveSession(user: UserModel) {

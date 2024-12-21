@@ -21,6 +21,7 @@ class DetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        supportActionBar?.hide()
         val storyId=intent.getStringExtra("ID_STORY")
         Log.d("ID STORY","$storyId")
         viewModel.getSession().observe(this, Observer { user->

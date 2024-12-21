@@ -1,6 +1,4 @@
 package com.dicoding.picodiploma.loginwithanimation.data.remote
-
-import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit

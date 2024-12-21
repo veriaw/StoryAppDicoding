@@ -1,7 +1,10 @@
 package com.dicoding.picodiploma.loginwithanimation.view.addstory
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -10,13 +13,17 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Observer
 import com.dicoding.picodiploma.loginwithanimation.databinding.ActivityAddStoryBinding
 import com.dicoding.picodiploma.loginwithanimation.view.ViewModelFactory
 import com.dicoding.picodiploma.loginwithanimation.view.main.MainActivity
 import com.dicoding.picodiploma.loginwithanimation.view.main.MainViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
@@ -26,6 +33,8 @@ import java.io.InputStream
 
 class AddStoryActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAddStoryBinding
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private var usingLocation: Boolean = false
     private val viewModel by viewModels<MainViewModel> {
         ViewModelFactory.getInstance(this)
     }
@@ -34,16 +43,24 @@ class AddStoryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAddStoryBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         binding.btnGallery.setOnClickListener {
             startGallery()
         }
         binding.btnCamera.setOnClickListener {
             Toast.makeText(this@AddStoryActivity, "Under Development", Toast.LENGTH_SHORT).show()
         }
+        binding.showLocation.setOnCheckedChangeListener{buttonView, isChecked->
+            if (isChecked){
+                usingLocation = true
+            }else{
+                usingLocation = false
+            }
+        }
         binding.btnPost.setOnClickListener {
             val imageFile = imageUri?.let { it1 -> uriToFile(it1, this) }
             val description = binding.etDescription.text.toString()
-            val requestBody = description.toRequestBody("text/plain".toMediaType())
+            val requestBodyDescription = description.toRequestBody("text/plain".toMediaType())
             val requestImageFile = imageFile?.asRequestBody("image/jpeg".toMediaType())
             val multipartBody = requestImageFile?.let { reqImage ->
                 MultipartBody.Part.createFormData(
@@ -52,11 +69,17 @@ class AddStoryActivity : AppCompatActivity() {
                     reqImage
                 )
             }
-            viewModel.getSession().observe(this, Observer {user->
-                val token = "Bearer "+user.token
-                multipartBody?.let { it1 -> viewModel.addNewStory(requestBody, it1,token) }
-            })
+            if(usingLocation == true){
+                addStoryWithLoc(multipartBody, requestBodyDescription)
+            }else{
+                viewModel.getSession().observe(this, Observer {user->
+                    val token = "Bearer "+user.token
+                    multipartBody?.let { it1 -> viewModel.addNewStory(requestBodyDescription, it1, token) }
+                })
+            }
+            binding.showLocation.isChecked=false
         }
+
         viewModel.addStoryResponse.observe(this, Observer { response->
             Log.d("AddStoryResponse", "Response received: $response")
             if(response.error==false){
@@ -66,6 +89,54 @@ class AddStoryActivity : AppCompatActivity() {
                 Toast.makeText(this, "Failed to Add Story Because ${response.message}", Toast.LENGTH_SHORT).show()
             }
         })
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun addStoryWithLoc(multipartBody: MultipartBody. Part?, requestBodyDescription: RequestBody){
+        if(isLocationPermissionGranted()){
+            val lastLocation = fusedLocationProviderClient.lastLocation
+            lastLocation.addOnSuccessListener { currentLoc->
+                Log.d("CURRENT LOC", "$currentLoc")
+                if(currentLoc != null){
+                    val requestBodyLat = currentLoc.latitude.toFloat()
+                    val requestBodyLon = currentLoc.longitude.toFloat()
+                    viewModel.getSession().observe(this, Observer {user->
+                        val token = "Bearer "+user.token
+                        multipartBody?.let {
+                            viewModel.addNewStoryWithLoc(requestBodyDescription, requestBodyLat, requestBodyLon,
+                                it, token)
+                        }
+                    })
+                }
+            }
+
+            lastLocation.addOnFailureListener {
+                Log.d("Current Loc","Failed to get Current Location")
+            }
+        }
+    }
+
+    private fun isLocationPermissionGranted(): Boolean {
+        return if (ActivityCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                1001
+            )
+            false
+        } else {
+            true
+        }
     }
 
     private fun startGallery() {

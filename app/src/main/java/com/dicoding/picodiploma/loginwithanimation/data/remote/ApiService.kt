@@ -35,14 +35,29 @@ interface ApiService {
         @Header("Authorization") authToken: String,
         @Query("page") page: Int,
         @Query("size") size: Int,
-        @Query("location") location: Int = 1,
     ): GetStoryResponse
+
+    @GET("stories")
+    fun getAllStoriesWithMarker(
+        @Header("Authorization") authToken: String,
+        @Query("location") location: Int = 1,
+    ): Call<GetStoryResponse>
 
     @GET("stories/{id}")
     fun getDetailStories(
         @Header("Authorization") authToken: String,
         @Path("id") id:String
     ): Call<DetailStoryResponse>
+
+    @Multipart
+    @POST("stories") // Ganti dengan endpoint yang sesuai
+    fun addNewStoryWithLoc(
+        @Part("description") description: RequestBody,
+        @Part("lat") lat: Float,
+        @Part("lon") lon: Float,
+        @Part photo: MultipartBody.Part,
+        @Header("Authorization") authToken: String
+    ): Call<AddStoryResponse>
 
     @Multipart
     @POST("stories") // Ganti dengan endpoint yang sesuai
